@@ -19,7 +19,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "MPC\\SSO\\": "src/"
+            "MediaPartners\\SSO\\": "src/"
         }
     }
 }
