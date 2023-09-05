@@ -7,7 +7,7 @@ This Magento 2 extension allows store administrators to log in to their Magento 
 The recommended way to install this extension is via composer:
 
 ```shell
-composer require space48/magento2-sso
+composer require d-hansen/magento2-sso
 ```
 
 If you are unable to use composer, you can install the extension manually by downloading the package zip file from the Releases page and extracting it to `app/code/Space48/SSO`.
