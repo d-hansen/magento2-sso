@@ -8,6 +8,8 @@ use Magento\Framework\Event\ManagerInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Math\Random;
 use Magento\Security\Model\AdminSessionsManager;
+use Magento\TwoFactorAuth\Api\TfaInterface;
+use Magento\TwoFactorAuth\Api\TfaSessionInterface;
 use Magento\User\Model\ResourceModel\User as UserResource;
 use Magento\User\Model\User;
 use Magento\User\Model\UserFactory;
@@ -49,6 +51,16 @@ class UserManager
     private $securityManager;
 
     /**
+     * @var TfaSessionInterface
+     */
+    private $tfa;
+
+    /**
+     * @var TfaSessionInterface
+     */
+    private $tfaSession;
+
+    /**
      * @var ManagerInterface
      */
     private $eventManager;
@@ -60,6 +72,8 @@ class UserManager
         Random $random,
         AuthStorageInterface $authStorage,
         AdminSessionsManager $securityManager,
+        TfaInterface $tfa,
+        TfaSessionInterface $tfaSession,
         ManagerInterface $eventManager
     ) {
         $this->userFactory = $userFactory;
@@ -68,6 +82,8 @@ class UserManager
         $this->random = $random;
         $this->authStorage = $authStorage;
         $this->securityManager = $securityManager;
+        $this->tfa = $tfa;
+        $this->tfaSession = $tfaSession;
         $this->eventManager = $eventManager;
     }
 
@@ -103,15 +119,15 @@ class UserManager
         $id = $this->userResource->userExists($user)['user_id'] ?? null;
         if ($id) {
             $this->userResource->load($user, $id);
+        } else {
+            $user
+                ->setUserName($username)
+                ->setEmail($email)
+                ->setFirstName($firstname)
+                ->setLastName($lastname)
+                ->setData('is_sso', 1)
+                ->setRoleId($roleId);
         }
-
-        $user
-            ->setUserName($username)
-            ->setEmail($email)
-            ->setFirstName($firstname)
-            ->setLastName($lastname)
-            ->setData('is_sso', 1)
-            ->setRoleId($roleId);
 
         if (!$user->getPassword()) {
             try {
@@ -147,6 +163,7 @@ class UserManager
         $this->authStorage->processLogin();
         $this->userResource->recordLogin($user);
         $this->securityManager->processLogin();
+        if ($this->tfa && $this->tfa->isEnabled()) $this->tfaSession->grantAccess();
 
         if (!$this->authStorage->getUser()) {
             throw new UserException(__('Sign in process failed - your account may be disabled temporarily. Please contact the store administrator.'));

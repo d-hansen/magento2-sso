@@ -125,11 +125,11 @@ class Login
             throw new UserException(__('Single sign-on authentication failed.'));
         }
 
-        $user = $this->userManager->upsertUser(
-            $auth->getNameId(),
-            $this->getRequiredAttribute($auth, $this->config->getEmailAttributeName()),
-            $this->getRequiredAttribute($auth, $this->config->getFirstNameAttributeName()),
-            $this->getRequiredAttribute($auth, $this->config->getLastNameAttributeName()),
+        $userFirstName = $this->getRequiredAttribute($auth, $this->config->getFirstNameAttributeName());
+        $userLastName = $this->getRequiredAttribute($auth, $this->config->getLastNameAttributeName());
+        $userName = $userFirstName . '.' . $userLastName;
+        $userEmail = $this->getRequiredAttribute($auth, $this->config->getEmailAttributeName());
+        $user = $this->userManager->upsertUser($userName, $userEmail, $userFirstName, $userLastName,
             $this->getMagentoRoleName($auth)
         );
 
