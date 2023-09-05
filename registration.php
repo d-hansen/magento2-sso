@@ -2,4 +2,4 @@
 
 use Magento\Framework\Component\ComponentRegistrar;
 
-ComponentRegistrar::register(ComponentRegistrar::MODULE, 'Space48_SSO', __DIR__ . '/src');
+ComponentRegistrar::register(ComponentRegistrar::MODULE, 'MPC_SSO', __DIR__ . '/src');

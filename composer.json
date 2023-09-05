@@ -1,5 +1,5 @@
 {
-    "name": "space48/magento2-sso",
+    "name": "d-hansen/magento2-sso",
     "description": "SAML based single sign-on integration for Magento 2 backend.",
     "type": "library",
     "license": "MIT",
@@ -19,7 +19,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "Space48\\SSO\\": "src/"
+            "MPC\\SSO\\": "src/"
         }
     }
 }
