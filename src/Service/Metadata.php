@@ -3,7 +3,7 @@
 namespace Space48\SSO\Service;
 
 use Space48\SSO\Exception\ServiceException;
-use Space48\SSO\Model\AuthFactory;
+use Space48\SSO\Model\AuthInstance;
 use Space48\SSO\Model\Config;
 
 class Metadata
@@ -14,16 +14,16 @@ class Metadata
     private $config;
 
     /**
-     * @var AuthFactory
+     * @var AuthInstance
      */
-    private $authFactory;
+    private $authInstance;
 
     public function __construct(
         Config $config,
-        AuthFactory $authFactory
+        AuthInstance $authInstance
     ) {
         $this->config = $config;
-        $this->authFactory = $authFactory;
+        $this->authInstance = $authInstance;
     }
 
     public function isAvailable(): bool
@@ -36,7 +36,7 @@ class Metadata
      */
     public function getMetadata(): string
     {
-        $settings = $this->authFactory->getInstance()->getSettings();
+        $settings = $this->authInstance->get()->getSettings();
 
         try {
             $metadata = $settings->getSPMetadata();

@@ -4,7 +4,7 @@ namespace Space48\SSO\Model;
 
 use Space48\SSO\Exception\ServiceException;
 
-class AuthFactory
+class AuthInstance
 {
     /**
      * @var Config
@@ -33,7 +33,7 @@ class AuthFactory
     /**
      * @throws ServiceException
      */
-    public function getInstance(): \OneLogin\Saml2\Auth
+    public function get(): \OneLogin\Saml2\Auth
     {
         if (!isset($this->instance)) {
             try {

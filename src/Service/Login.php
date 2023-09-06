@@ -3,11 +3,9 @@
 namespace Space48\SSO\Service;
 
 use Magento\Framework\App\Response\RedirectInterface;
-use OneLogin\Saml2\Auth;
-use OneLogin\Saml2\ValidationError;
 use Space48\SSO\Exception\ServiceException;
 use Space48\SSO\Exception\UserException;
-use Space48\SSO\Model\AuthFactory;
+use Space48\SSO\Model\AuthInstance;
 use Space48\SSO\Model\Config;
 use Space48\SSO\Model\Storage;
 use Space48\SSO\Model\Url;
@@ -21,9 +19,9 @@ class Login
     private $config;
 
     /**
-     * @var AuthFactory
+     * @var AuthInstance
      */
-    private $authFactory;
+    private $authInstance;
 
     /**
      * @var Storage
@@ -42,14 +40,14 @@ class Login
 
     public function __construct(
         Config $config,
-        AuthFactory $authFactory,
+        AuthInstance $authInstance,
         Storage $storage,
         Url $url,
         UserManager $userManager
     ) {
 
         $this->config = $config;
-        $this->authFactory = $authFactory;
+        $this->authInstance = $authInstance;
         $this->storage = $storage;
         $this->url = $url;
         $this->userManager = $userManager;
@@ -67,7 +65,7 @@ class Login
      */
     public function initLogin(): string
     {
-        $auth = $this->authFactory->getInstance();
+        $auth = $this->authInstance->get();
 
         try {
             $redirectUrl = $auth->login(
@@ -97,7 +95,7 @@ class Login
      */
     public function processLoginResponse(): string
     {
-        $auth = $this->authFactory->getInstance();
+        $auth = $this->authInstance->get();
         $requestId = $this->storage->getLastRequestId(true);
 
         try {
@@ -106,8 +104,8 @@ class Login
             if ($auth->getLastErrorException()) {
                 throw $auth->getLastErrorException();
             }
-        } catch (ValidationError $e) {
-            if ($e->getCode() === ValidationError::ASSERTION_EXPIRED) {
+        } catch (\OneLogin\Saml2\ValidationError $e) {
+            if ($e->getCode() === \OneLogin\Saml2\ValidationError::ASSERTION_EXPIRED) {
                 throw new UserException(__('Provided single sign-on response is expired.'), $e);
             }
             throw new ServiceException(__(
@@ -138,7 +136,7 @@ class Login
         return $auth->redirectTo('', [], true);
     }
 
-    private function getMagentoRoleName(Auth $auth): string
+    private function getMagentoRoleName(\OneLogin\Saml2\Auth $auth): string
     {
         if ($this->config->hasStaticMagentoRoleName()) {
             return $this->config->getStaticMagentoRoleName();
@@ -150,7 +148,7 @@ class Login
     /**
      * @throws UserException
      */
-    private function getRequiredAttribute(Auth $auth, string $attributeName): string
+    private function getRequiredAttribute(\OneLogin\Saml2\Auth $auth, string $attributeName): string
     {
         $value = $auth->getAttribute($attributeName);
 
