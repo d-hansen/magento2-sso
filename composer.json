@@ -19,7 +19,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "MediaPartners\\SSO\\": "src/"
+            "Space48\\SSO\\": "src/"
         }
     }
 }
