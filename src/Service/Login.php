@@ -10,6 +10,7 @@ use Space48\SSO\Model\Config;
 use Space48\SSO\Model\Storage;
 use Space48\SSO\Model\Url;
 use Space48\SSO\Model\UserManager;
+use DOMDocument;
 
 class Login
 {
@@ -108,10 +109,14 @@ class Login
             if ($e->getCode() === \OneLogin\Saml2\ValidationError::ASSERTION_EXPIRED) {
                 throw new UserException(__('Provided single sign-on response is expired.'), $e);
             }
+            $responseDOM = new DOMDocument();
+            $responseDOM->preserveWhiteSpace = true;
+            $responseDOM->formatOutput = true;
+            $responseDOM->loadXML($auth->getLastResponseXML());
             throw new ServiceException(__(
                 'Failed to validate SSO login response: %error',
                 ['error' => $e->getMessage()]
-            ), $e);
+            ), $e, 0, $responseDOM->saveXML() );
         } catch (\Exception $e) {
             throw new ServiceException(__(
                 'Failed to process SSO login response: %error',

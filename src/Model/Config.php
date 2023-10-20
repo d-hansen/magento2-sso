@@ -4,6 +4,7 @@ namespace Space48\SSO\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use OneLogin\Saml2\Constants;
+use OneLogin\Saml2\IdPMetadataParser;
 
 class Config
 {
@@ -11,12 +12,14 @@ class Config
     private const XML_PATH_SP_ENTITY_ID = 'admin/space48_sso/sp/entity_id';
     private const XML_PATH_SP_STATIC_MAGENTO_ROLE_NAME = 'admin/space48_sso/sp/static_magento_role_name';
     private const XML_PATH_IDP_ENTITY_ID = 'admin/space48_sso/idp/entity_id';
-    private const XML_PATH_IDP_SIGN_ON_URL = 'admin/space48_sso/idp/sign_on_url';
-    private const XML_PATH_IDP_PUBLIC_CERTIFICATE = 'admin/space48_sso/idp/public_certificate';
-    private const XML_PATH_IDP_ATTRIBUTE_FIRSTNAME = 'admin/space48_sso/idp/attribute_firstname';
-    private const XML_PATH_IDP_ATTRIBUTE_LASTNAME = 'admin/space48_sso/idp/attribute_lastname';
-    private const XML_PATH_IDP_ATTRIBUTE_EMAIL = 'admin/space48_sso/idp/attribute_email';
-    private const XML_PATH_IDP_ATTRIBUTE_ROLE = 'admin/space48_sso/idp/attribute_role';
+    private const XML_PATH_IDP_METADATA_FETCH = 'admin/space48_sso/idp/metadata/fetch';
+    private const XML_PATH_IDP_METADATA_REMOTE_URL = 'admin/space48_sso/idp/metadata/remote_url';
+    private const XML_PATH_IDP_METADATA_SIGN_ON_URL = 'admin/space48_sso/idp/metadata/sign_on_url';
+    private const XML_PATH_IDP_METADATA_X509_SIGNING_CERTIFICATE = 'admin/space48_sso/idp/metadata/x509_signing_certificate';
+    private const XML_PATH_IDP_SAML_ATTRIBUTE_FIRSTNAME = 'admin/space48_sso/idp/saml/attribute_firstname';
+    private const XML_PATH_IDP_SAML_ATTRIBUTE_LASTNAME = 'admin/space48_sso/idp/saml/attribute_lastname';
+    private const XML_PATH_IDP_SAML_ATTRIBUTE_EMAIL = 'admin/space48_sso/idp/saml/attribute_email';
+    private const XML_PATH_IDP_SAML_ATTRIBUTE_ROLE = 'admin/space48_sso/idp/saml/attribute_role';
 
     /**
      * @var Url
@@ -43,22 +46,22 @@ class Config
 
     public function getFirstNameAttributeName(): string
     {
-        return $this->config->getValue(self::XML_PATH_IDP_ATTRIBUTE_FIRSTNAME) ?? 'firstname';
+        return $this->config->getValue(self::XML_PATH_IDP_SAML_ATTRIBUTE_FIRSTNAME) ?? 'firstname';
     }
 
     public function getLastNameAttributeName(): string
     {
-        return $this->config->getValue(self::XML_PATH_IDP_ATTRIBUTE_LASTNAME) ?? 'lastname';
+        return $this->config->getValue(self::XML_PATH_IDP_SAML_ATTRIBUTE_LASTNAME) ?? 'lastname';
     }
 
     public function getEmailAttributeName(): string
     {
-        return $this->config->getValue(self::XML_PATH_IDP_ATTRIBUTE_EMAIL) ?? 'email';
+        return $this->config->getValue(self::XML_PATH_IDP_SAML_ATTRIBUTE_EMAIL) ?? 'email';
     }
 
     public function geRoleAttributeName(): string
     {
-        return $this->config->getValue(self::XML_PATH_IDP_ATTRIBUTE_ROLE) ?? 'role';
+        return $this->config->getValue(self::XML_PATH_IDP_SAML_ATTRIBUTE_ROLE) ?? 'role';
     }
 
     public function hasStaticMagentoRoleName(): bool
@@ -73,7 +76,7 @@ class Config
 
     public function getSAMLSettings(): array
     {
-        return [
+        $settings = [
             'strict' => true,
             'debug' => false,
             'baseurl' => $this->url->getBackendUrl(),
@@ -108,15 +111,23 @@ class Config
                     ],
                 ],
                 'NameIDFormat' => Constants::NAMEID_PERSISTENT,
-            ],
-            'idp' => [
+            ]
+        ];
+
+        if ($this->config->getValue(self::XML_PATH_IDP_METADATA_FETCH) === "1") {
+            $metadataInfo = IdpMetadataParser::parseRemoteXML($this->config->getValue(self::XML_PATH_IDP_METADATA_REMOTE_URL),
+                                                $this->config->getValue(self::XML_PATH_IDP_ENTITY_ID));
+            $settings = IdpMetadataParser::injectIntoSettings($settings, $metadataInfo);
+        } else {
+            $settings['idp'] = [
                 'entityId' => $this->config->getValue(self::XML_PATH_IDP_ENTITY_ID),
                 'singleSignOnService' => [
-                    'url' => $this->config->getValue(self::XML_PATH_IDP_SIGN_ON_URL),
+                    'url' => $this->config->getValue(self::XML_PATH_IDP_METADATA_SIGN_ON_URL),
                     'binding' => Constants::BINDING_HTTP_REDIRECT,
                 ],
-                'x509cert' => $this->config->getValue(self::XML_PATH_IDP_PUBLIC_CERTIFICATE),
-            ],
-        ];
+                'x509cert' => $this->config->getValue(self::XML_PATH_IDP_METADATA_X509_SIGNING_CERTIFICATE),
+            ];
+        }
+        return $settings;
     }
 }

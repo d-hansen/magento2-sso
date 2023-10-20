@@ -17,7 +17,7 @@ to the "repositories" property.
 
 Then you can do:
 ```shell
-composer require d-hansen/magento2-sso:v1.1.1-p1
+composer require d-hansen/magento2-sso:v1.2.0
 ```
 
 ---

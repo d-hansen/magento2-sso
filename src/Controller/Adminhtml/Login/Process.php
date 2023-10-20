@@ -12,6 +12,7 @@ use Magento\Framework\Message\ManagerInterface;
 use Space48\SSO\Exception\ServiceException;
 use Space48\SSO\Exception\UserException;
 use Space48\SSO\Service\Login;
+use Psr\Log\LoggerInterface;
 
 class Process implements HttpPostActionInterface, CsrfAwareActionInterface
 {
@@ -35,17 +36,24 @@ class Process implements HttpPostActionInterface, CsrfAwareActionInterface
      */
     private $messageManager;
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
         Login $loginService,
         ForwardFactory $forwardFactory,
         RedirectFactory $redirectFactory,
-        ManagerInterface $messageManager
+        ManagerInterface $messageManager,
+        LoggerInterface $logger
     ) {
 
         $this->loginService = $loginService;
         $this->forwardFactory = $forwardFactory;
         $this->redirectFactory = $redirectFactory;
         $this->messageManager = $messageManager;
+        $this->logger = $logger;
     }
 
     public function execute()
@@ -58,6 +66,14 @@ class Process implements HttpPostActionInterface, CsrfAwareActionInterface
 
         try {
             $redirectUrl = $this->loginService->processLoginResponse();
+        } catch (ServiceException $e) {
+            $this->messageManager->addErrorMessage('SSO Service Exception: ' . $e->getMessage());
+            $this->messageManager->addWarningMessage('Please have your administrator check your SSO IdP Configuration!');
+            $this->logger->error('SSO Service Exception: ' . $e->getMessage());
+            $this->logger->debug('SSO Additional Info: ' . $e->getAdditionalInfo());
+            return $this->forwardFactory
+                ->create()
+                ->forward('adminhtml/auth/login');
         } catch (UserException $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
             return $this->forwardFactory
